@@ -8,7 +8,7 @@ import retrofit2.http.Query
 
 
     interface CityService {
-        @GET("v1/city")
+        @GET("v1/city?")
         suspend fun getCity(
             @Query("name") name: String
         ): List<CityResponse>

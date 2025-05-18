@@ -20,13 +20,18 @@ class WeatherRepository(
             )
 
             val current = weather.current_weather
-            if (current != null) {
+            val daily = weather.daily
+
+            if (current != null && daily != null) {
                 WeatherInfo(
                     city = city.name,
                     temperature = current.temperature,
                     description = "Code: ${current.weathercode}",
                     latitude = city.latitude,
-                    longitude = city.longitude
+                    longitude = city.longitude,
+                    dailyMax = daily.temperature_2m_max,
+                    dailyMin = daily.temperature_2m_min,
+                    forecastDates = daily.time
                 )
             } else {
                 null
@@ -37,6 +42,7 @@ class WeatherRepository(
             null
         }
     }
+
 
 }
 

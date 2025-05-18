@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
+    android:backgroundTint="@color/background"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal">
+    android:padding="16dp">
 
     <!-- Spinner для выбора города -->
     <Spinner
@@ -12,44 +15,91 @@
         android:layout_width="match_parent"
         android:layout_height="57dp" />
 
-    <!-- Картинка города -->
-    <ImageView
-        android:id="@+id/cityImage"
-        android:layout_width="400dp"
-        android:layout_height="400dp"
-        android:layout_marginTop="24dp"
-        android:scaleType="centerCrop" />
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp">
+
+        <!-- Картинка города -->
+        <ImageView
+            android:id="@+id/cityImage"
+            android:layout_width="match_parent"
+            android:layout_height="400dp"
+            android:contentDescription="@+string/cityImage"
+            android:scaleType="centerCrop" />
+    </androidx.cardview.widget.CardView>
+
 
     <!-- Название города -->
     <TextView
         android:id="@+id/cityName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginTop="24dp" />
+        android:textStyle="bold|italic" />
 
-    <!-- Температура -->
+    <!-- Текущая температура -->
     <TextView
         android:id="@+id/temperature"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:textSize="18sp" />
 
     <!-- Местное время -->
+
+
+    <!-- Прогноз погоды на следующие 7 дней -->
     <TextView
         android:id="@+id/localTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:textSize="16sp" />
 
-    <!-- Общая инфа о городе-->
-    <TextView
-        android:id="@+id/commonInfo"
+    <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="333dp"
-        android:text="TextView" />
+        android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:scrollbars="none"
+        android:layout_marginTop="16dp">
+
+        <LinearLayout
+            android:id="@+id/forecastContainer"
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </HorizontalScrollView>
+
+    <!-- Инфа о городе -->
+    <TextView
+        android:id="@+id/cityTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Немного о городе"
+        android:textStyle="bold|italic"
+        android:textSize="18sp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="85dp"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/cityDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+    </ScrollView>
+
+
 
 </LinearLayout>

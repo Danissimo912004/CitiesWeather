@@ -5,6 +5,10 @@ data class WeatherInfo(
     val temperature: Double,
     val description: String,
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
+    val dailyMax: List<Double>,
+    val dailyMin: List<Double>,
+    val forecastDates: List<String>
 )
+
 
