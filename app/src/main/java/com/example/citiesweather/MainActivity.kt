@@ -17,6 +17,11 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import androidx.lifecycle.ViewModelProvider
+import com.example.citiesweather.UI.NoInternetActivity
+import com.example.citiesweather.ViewModel.WeatherViewModel
+import com.example.citiesweather.ViewModel.WeatherViewModelFactory
+import com.example.citiesweather.data.models.WeatherInfo
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -32,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var dailyForecast: TextView
     private lateinit var cityDescription: TextView
     private lateinit var forecastContainer: LinearLayout
+    private lateinit var weatherViewModel: WeatherViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +58,9 @@ class MainActivity : AppCompatActivity() {
         val weatherService = ClientService.getWeatherService()
         repository = WeatherRepository(cityService, weatherService)
 
+        val factory = WeatherViewModelFactory(repository)
+        weatherViewModel = ViewModelProvider(this, factory).get(WeatherViewModel::class.java)
+
         // Настройка Spinner
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, cities)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -61,15 +70,35 @@ class MainActivity : AppCompatActivity() {
         citySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedCity = cities[position]
-                loadWeather(selectedCity)
+                weatherViewModel.loadWeather(selectedCity)
+
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
         // Загрузка погоды по умолчанию
-        loadWeather("Rome")
+        weatherViewModel.loadWeather("rome")
+
+
+        lifecycleScope.launchWhenStarted {
+            weatherViewModel.weatherInfo.collect { result ->
+                if (result != null) {
+                    updateUI(result)
+                }
+            }
+        }
+
+        lifecycleScope.launchWhenStarted {
+            weatherViewModel.error.collect { errorMsg ->
+                if (errorMsg != null) {
+                    Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
+
+
     private fun isNetworkAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -79,6 +108,35 @@ class MainActivity : AppCompatActivity() {
         } else {
             val networkInfo = connectivityManager.activeNetworkInfo
             return networkInfo != null && networkInfo.isConnected
+        }
+    }
+
+    private fun updateUI(result: WeatherInfo) {
+        cityImage.setImageResource(getCityImageRes(result.city))
+        cityName.text = result.city
+        temperature.text = "${result.temperature}°C"
+        localTime.text = getCurrentTime()
+        cityDescription.text = getCityDescription(result.city)
+
+        forecastContainer.removeAllViews()
+
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val dayFormat = java.text.SimpleDateFormat("EE", Locale("ru"))
+
+        for (i in result.forecastDates.indices) {
+            val date = dateFormat.parse(result.forecastDates[i])
+            val dayOfWeek = dayFormat.format(date ?: continue).uppercase()
+
+            val itemView = layoutInflater.inflate(R.layout.forecast_item, forecastContainer, false)
+            val dayText = itemView.findViewById<TextView>(R.id.dayOfWeek)
+            val maxTemp = itemView.findViewById<TextView>(R.id.tempMax)
+            val minTemp = itemView.findViewById<TextView>(R.id.tempMin)
+
+            dayText.text = dayOfWeek
+            maxTemp.text = "Макс: ${result.dailyMax[i]}°C"
+            minTemp.text = "Мин: ${result.dailyMin[i]}°C"
+
+            forecastContainer.addView(itemView)
         }
     }
 

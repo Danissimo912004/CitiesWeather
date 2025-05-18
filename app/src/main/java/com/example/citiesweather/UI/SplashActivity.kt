@@ -1,4 +1,4 @@
-package com.example.citiesweather
+package com.example.citiesweather.UI
 
 import android.content.Context
 import android.content.Intent
@@ -7,17 +7,9 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
-import android.view.View
-import android.widget.*
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import com.example.citiesweather.data.network.ClientService
-import com.example.citiesweather.data.repository.WeatherRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.*
+import com.example.citiesweather.MainActivity
+import com.example.citiesweather.R
 
 class SplashActivity : AppCompatActivity() {
     fun isNetworkAvailable(): Boolean {

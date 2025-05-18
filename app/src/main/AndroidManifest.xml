@@ -19,7 +19,7 @@
 
         <!-- SplashActivity — начальный экран -->
         <activity
-            android:name=".SplashActivity"
+            android:name=".UI.SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -29,7 +29,7 @@
 
         <!-- Экран без интернета -->
         <activity
-            android:name=".NoInternetActivity"
+            android:name=".UI.NoInternetActivity"
             android:exported="true" />
 
         <!-- Главный экран -->
