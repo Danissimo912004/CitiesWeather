@@ -9,9 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.citiesweather.data.network.ClientService
 import com.example.citiesweather.data.repository.WeatherRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -29,12 +27,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var repository: WeatherRepository
     private val cities = listOf("Rome", "Milan", "Florence", "Venice", "Pisa")
 
-    // Элементы UI
     private lateinit var citySpinner: Spinner
     private lateinit var cityImage: ImageView
     private lateinit var cityName: TextView
     private lateinit var temperature: TextView
-    private lateinit var dailyForecast: TextView
     private lateinit var cityDescription: TextView
     private lateinit var forecastContainer: LinearLayout
     private lateinit var weatherViewModel: WeatherViewModel
@@ -44,7 +40,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         window.statusBarColor = ContextCompat.getColor(this, R.color.background)
 
-        // Инициализация UI
         citySpinner = findViewById(R.id.citySpinner)
         cityImage = findViewById(R.id.cityImage)
         cityName = findViewById(R.id.cityName)
@@ -53,7 +48,6 @@ class MainActivity : AppCompatActivity() {
         cityDescription = findViewById(R.id.cityDescription)
         forecastContainer = findViewById(R.id.forecastContainer)
 
-        // Инициализация репозитория
         val cityService = ClientService.getCityService()
         val weatherService = ClientService.getWeatherService()
         repository = WeatherRepository(cityService, weatherService)
@@ -61,43 +55,44 @@ class MainActivity : AppCompatActivity() {
         val factory = WeatherViewModelFactory(repository)
         weatherViewModel = ViewModelProvider(this, factory).get(WeatherViewModel::class.java)
 
-        // Настройка Spinner
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, cities)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         citySpinner.adapter = adapter
 
-        // Обработчик выбора города
         citySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedCity = cities[position]
-                weatherViewModel.loadWeather(selectedCity)
-
+                if (!isNetworkAvailable(this@MainActivity)) {
+                    openNoInternetScreen()
+                } else {
+                    weatherViewModel.loadWeather(selectedCity)
+                }
             }
 
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
 
-        // Загрузка погоды по умолчанию
-        weatherViewModel.loadWeather("rome")
+        // Первая загрузка
+        if (!isNetworkAvailable(this)) {
+            openNoInternetScreen()
+        } else {
+            weatherViewModel.loadWeather("rome")
+        }
 
-
-        lifecycleScope.launchWhenStarted {
+        lifecycleScope.launch {
             weatherViewModel.weatherInfo.collect { result ->
-                if (result != null) {
-                    updateUI(result)
-                }
+                result?.let { updateUI(it) }
             }
         }
 
-        lifecycleScope.launchWhenStarted {
+        lifecycleScope.launch {
             weatherViewModel.error.collect { errorMsg ->
-                if (errorMsg != null) {
-                    Toast.makeText(this@MainActivity, errorMsg, Toast.LENGTH_SHORT).show()
+                errorMsg?.let {
+                    Toast.makeText(this@MainActivity, it, Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
-
 
     private fun isNetworkAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -109,6 +104,12 @@ class MainActivity : AppCompatActivity() {
             val networkInfo = connectivityManager.activeNetworkInfo
             return networkInfo != null && networkInfo.isConnected
         }
+    }
+
+    private fun openNoInternetScreen() {
+        val intent = Intent(this, NoInternetActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 
     private fun updateUI(result: WeatherInfo) {
@@ -140,63 +141,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadWeather(city: String) {
-        lifecycleScope.launch {
-            try {
-                val result = repository.getWeatherForCity(city)
-                withContext(Dispatchers.Main) {
-                    if (result != null) {
-                        cityImage.setImageResource(getCityImageRes(city))
-                        cityName.text = result.city
-                        temperature.text = "${result.temperature}°C"
-                        localTime.text = getCurrentTime()
-                        cityDescription.text = getCityDescription(city)
-
-                        // Чистим контейнер прогнозов
-                        forecastContainer.removeAllViews()
-
-                        // Форматируем дни недели
-                        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                        val dayFormat = java.text.SimpleDateFormat("EE", Locale("ru"))
-
-                        for (i in result.forecastDates.indices) {
-                            val date = dateFormat.parse(result.forecastDates[i])
-                            val dayOfWeek = dayFormat.format(date ?: continue).uppercase()
-
-                            // Подключаем item layout
-                            val itemView = layoutInflater.inflate(R.layout.forecast_item, forecastContainer, false)
-
-                            val dayText = itemView.findViewById<TextView>(R.id.dayOfWeek)
-                            val maxTemp = itemView.findViewById<TextView>(R.id.tempMax)
-                            val minTemp = itemView.findViewById<TextView>(R.id.tempMin)
-
-                            // Устанавливаем значения
-                            dayText.text = dayOfWeek
-                            maxTemp.text = "Макс: ${result.dailyMax[i]}°C"
-                            minTemp.text = "Мин: ${result.dailyMin[i]}°C"
-
-                            // Добавляем в контейнер
-                            forecastContainer.addView(itemView)
-                        }
-
-                    } else {
-                        cityName.text = "Ошибка загрузки"
-                        temperature.text = ""
-                        localTime.text = ""
-                        cityDescription.text = ""
-                        forecastContainer.removeAllViews()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("WeatherError", "Ошибка загрузки данных: ${e.localizedMessage}")
-                withContext(Dispatchers.Main) {
-                    val intent = Intent(this@MainActivity, NoInternetActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                }
-            }
-        }
-    }
 
 
     private fun getCityDescription(city: String): String {
